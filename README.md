@@ -1,5 +1,4 @@
-# PMFA
-Principal Metabolic Flux Mode Analysis
+# Principal Metabolic Flux Mode Analysis
 This package contains PMFA and PSMFA code in Matlab. To run this code once need matlab inc=build function optimization routine "quadprog" . IT contains following 2 fucntions
 
 #SPMFA
