@@ -16,8 +16,11 @@ function [W,runTime]=PMFA_L2(Einput,S,lambda,L,U,str,num,ID)
 %W the PMF loadings
 % runtime: total time taken
 
-if( nargin < 5 ) 
+if( nargin < 4 ) 
     disp('Please gives all required inputs'); 
+end; 
+if( nargin < 5 ) 
+    U=ones(length(L),1);
 end; 
 if( nargin < 6 ) 
     str='temp';
