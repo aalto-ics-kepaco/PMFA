@@ -1,37 +1,37 @@
-function [W,TotalrunTime]=PMFA_L2(Einput,S,lambda,L,U,num,str,ID)
-% solve max x^Tcov(E)x - \lambda \|Sx\|_2 such that, and L<=x <=U
+function [W,TotalrunTime]=SPMFA_L1(Einput,S,lambda,C,L,U,num,str,ID)
+% solve max x^Tcov(E)x - \lambda \|Sx\|_2 
+%such that, and L<=x <=U and
+% \|x\|_1 <=C
 %%
 %Input:
-%Einput= ReactionExpression Matrix : number of reaction x number of samples
-%S=Stoichiometric Matrix : number of metabolites x number of reaction
-%lambda= model parameter show how strong steadystate constraint will be
+% Einput= ReactionExpression Matrix : number of reaction x number of samples
+% S=Stoichiometric Matrix : number of metabolites x number of reaction
+% lambda= model parameter show how strong steadystate constraint will be
 % L=lowaer bound of all reaction
 % U=upper bound for all reaction
-% str= some string to save intermediate results
+% C= sparsity parameter
+% str= some string to save intermediate results. Default is "cputime"
 % num = how many principal component need to find out. Default 1
 % ID = if consider to analysis a subsystem then ID contains lidt pf index
 % of target reactions.
 %%
-%Output:
-%W the PMF loadings
+% Output:
+% W: the PMF loadings
 % runtime: total time taken
 
-if( nargin < 4 ) 
+if( nargin < 6 ) 
     disp('Please gives all required inputs'); 
 end; 
-if( nargin < 5 ) 
-    U=ones(length(L),1);
-end; 
 
-if( nargin < 6 ) 
-    num=1;
-end;
 if( nargin < 7 ) 
-    str='temp';
-end;
+    num=1;
+end
 if( nargin < 8 ) 
+    str=num2str(cputime);
+end
+if( nargin < 9 ) 
     ID=[1:1:length(L)];
-end;
+end
 
 % initialization
 
@@ -58,10 +58,11 @@ CovE=Ec*Ec'/N;
 
 covS=lambda*S'*S;
 covS=0.5*(covS+covS');
-Tcov = CovE-covS;
+Tcov = CovE;
 [winit_Temp,~]=eig(Tcov);
 winit=winit_Temp(:,1:10);
 disp('eig complete');
+
 
 system('mkdir ./temp')
 
@@ -84,7 +85,7 @@ for t=st:1:num
     currCov=CovE;
     end
 
-    Tcov = covS - currCov;
+    Tcov = - currCov;
     [evec,v]=eig(Tcov);
     dv=diag(v);
     idp = find(dv >  0.00001);
@@ -102,18 +103,20 @@ for t=st:1:num
 
 	    elseif r<=10 
         	w= winit(:,r-1);
-    	else
+    	    else
 		w=zeros(D,1)
         	w(ID)=2*(rand(Nr,1)-0.5); %(some values only rdxrxn)
-    	end
+    	    end
 	
     
         
          %obj_pca = w'*currCov*w;
+         %mx=max(abs(w));
+         %w=max(U)*w/mx;
+         w=projL1(w,C);
          idL=find(w<L);
          w(idL)=L(idL);
-         w=w/norm(w);
-         obj = w'*(covS-currCov)*w;
+         obj = w'*(-currCov)*w + lambda * sum(abs(S*w));
          diff=1.0000e+12;
          fval_old = -diff;
          count=1;
@@ -123,24 +126,30 @@ for t=st:1:num
          temp=[];
          while diff>eps
               w_old=w;
-              obj_old = obj; 
-		[tw,temp(count).obj,temp(count).flag]=quadprog(2*real(CovP),-2*real(CovN)*w_old,[],[],[],[],L,U);
-		idL=find(tw<L);
-	         tw(idL)=L(idL);
+              obj_old = obj;
 
-		if norm(tw)>0.0001
-			temp(count).w=tw/norm(tw);
-		else
-			temp(count).w=tw;
-		end
 
+  
+		[twt,temp(count).obj,temp(count).flag]=quadprog([2*real(CovP) zeros(Nr, Nmet); zeros(Nmet,Nr+Nmet)], [-2*real(CovN)*w_old;lambda*ones(Nmet,1)],[S, -eye(Nmet);-S ,-eye(Nmet)], zeros(2*Nmet,1),[],[],[L;-1000*ones(Nmet,1)],[U;1000*ones(Nmet,1)]);
+		%if norm(tw)>0.0001
+	        %		temp(count).w=tw/norm(tw);
+		%else
+                 if norm(twt(1:Nr))>0.0001
+                        temp(count).w=projL1(twt(1:Nr),C);
+                 else
+			temp(count).w=twt(1:Nr);
+                 end
+                        temp(count).abssw=twt(Nr+1:end);
+		%end
+                idL=find(temp(count).w<L);
+                temp(count).w(idL)=L(idL); 
                 temp(count).objConstant= temp(count).obj+w_old'*CovN*w_old; 
                 if temp(count).flag==1
          		w = temp(count).w;
-         		obj=w'*(covS-currCov)*w;
+         		obj=w'*(-currCov)*w + lambda*sum(abs(S*w));
 			temp(count).objfunction=obj;
       		else
-		        temp(count).objfunction=w'*(covS-currCov)*w;
+		        temp(count).objfunction= w'*(-currCov)*w + lambda*sum(abs(S*w));
          		w=w_old;
          		obj=obj_old;
                 end

@@ -1,5 +1,5 @@
-function [W,TotalrunTime]=PMFA_L2(Einput,S,lambda,L,U,num,str,ID)
-% solve max x^Tcov(E)x - \lambda \|Sx\|_2 such that, and L<=x <=U
+function [W,TotalrunTime]=PMFA_L1(Einput,S,lambda,L,U,num,str,ID)
+% solve max x^Tcov(E)x - \lambda \|Sx\|_1 such that, and L<=x <=U
 %%
 %Input:
 %Einput= ReactionExpression Matrix : number of reaction x number of samples
@@ -58,10 +58,11 @@ CovE=Ec*Ec'/N;
 
 covS=lambda*S'*S;
 covS=0.5*(covS+covS');
-Tcov = CovE-covS;
+Tcov = CovE;
 [winit_Temp,~]=eig(Tcov);
 winit=winit_Temp(:,1:10);
 disp('eig complete');
+
 
 system('mkdir ./temp')
 
@@ -84,7 +85,7 @@ for t=st:1:num
     currCov=CovE;
     end
 
-    Tcov = covS - currCov;
+    Tcov = - currCov;
     [evec,v]=eig(Tcov);
     dv=diag(v);
     idp = find(dv >  0.00001);
@@ -108,12 +109,10 @@ for t=st:1:num
     	end
 	
     
-        
-         %obj_pca = w'*currCov*w;
          idL=find(w<L);
          w(idL)=L(idL);
          w=w/norm(w);
-         obj = w'*(covS-currCov)*w;
+         obj = w'*(-currCov)*w + lambda * sum(abs(S*w));
          diff=1.0000e+12;
          fval_old = -diff;
          count=1;
@@ -123,24 +122,29 @@ for t=st:1:num
          temp=[];
          while diff>eps
               w_old=w;
-              obj_old = obj; 
-		[tw,temp(count).obj,temp(count).flag]=quadprog(2*real(CovP),-2*real(CovN)*w_old,[],[],[],[],L,U);
-		idL=find(tw<L);
-	         tw(idL)=L(idL);
+              obj_old = obj;
 
-		if norm(tw)>0.0001
-			temp(count).w=tw/norm(tw);
-		else
-			temp(count).w=tw;
-		end
+  
+		[twt,temp(count).obj,temp(count).flag]=quadprog([2*real(CovP) zeros(Nr, Nmet); zeros(Nmet,Nr+Nmet)], [-2*real(CovN)*w_old;lambda*ones(Nmet,1)],[S, -eye(Nmet);-S ,-eye(Nmet)], zeros(2*Nmet,1),[],[],[L;-1000*ones(Nmet,1)],[U;1000*ones(Nmet,1)]);
+              tempw=twt(1:Nr);
+		idL=find(tempw<L);
+                tempw(idL)=L(idL);
+                if norm(twt(1:Nr))>0.0001
+			temp(count).w=tempw/norm(tempw);
+                else
+                        temp(count).w=tempw;
+                end 
+                        temp(count).abssw=twt(Nr+1:end);
+		%end
+                
 
                 temp(count).objConstant= temp(count).obj+w_old'*CovN*w_old; 
                 if temp(count).flag==1
          		w = temp(count).w;
-         		obj=w'*(covS-currCov)*w;
+         		obj=w'*(-currCov)*w + lambda*sum(abs(S*w));
 			temp(count).objfunction=obj;
       		else
-		        temp(count).objfunction=w'*(covS-currCov)*w;
+		        temp(count).objfunction= w'*(-currCov)*w + lambda*sum(abs(S*w));
          		w=w_old;
          		obj=obj_old;
                 end

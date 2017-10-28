@@ -2,7 +2,7 @@ function W=PCA(Einput,num)
 % solve max x^TEx 
 
 % centralized
-E=CentralizedExpression(Einput);
+E=CentralizedExpression(Einput,2);
 
 % covariance
 CovE=E*E';

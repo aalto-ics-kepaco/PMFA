@@ -1,5 +1,5 @@
-function [Sdef,Wn] = Deflation(S,W)
-Sdef=S;
+function [Edef,Q] = Deflation(E,W)
+Edef=E;
 Q=[];
 T=size(W,2);
 N=size(W,1);
@@ -19,7 +19,7 @@ for t=1:1:T
     % Hotelling Deflation 
         %Sdef=Sdef-q*q'*Sdef*q*q';
     % Orthogonal Projection
-        Sdef= Sdef - Sdef*q*q'*Sdef/(q'*Sdef*q);
+        Edef= Edef - Edef*q*q'*Edef/(q'*Edef*q);
     % using tech report http://www.eecs.berkeley.edu/Pubs/TechRpts/2012/EECS-2012-99.pdf
     
 end

@@ -1,9 +1,9 @@
-function W=SPCA(E,lambda,num)
-% solve max x^TEx - \lambda \|Sx\|_2 
+function W=SPCA(Einput,gamma,num)
+% solve max x^TEx - \gamma \|Sx\|_2 
 % initialization;
 eps=1.0000e-10;
 %centralization of expression
-E=CentralizedExpression(Einput);
+E=CentralizedExpression(Einput,2);
 
 % covariance
 CovE=E*E';
@@ -28,7 +28,7 @@ B=0.*Ainit;
                 A_old=A;
                 B_old=B;
                 for k=1:1:num;
-                    B(:,k)=max(abs(A_old(:,k)'*CovE)-lambda/2,0).* sign(A_old(:,k)'*CovE);
+                    B(:,k)=max(abs(A_old(:,k)'*CovE)-gamma/2,0).* sign(A_old(:,k)'*CovE);
 		 end
                 [U,~,V]=svd(CovE*B);
                 A=U(:,1:num)*V';
@@ -38,7 +38,7 @@ B=0.*Ainit;
         O.allobj_pca(t,:) = diag(W'*CovE*W);
         O.allobj_sparse(t,:)=sum(abs(W));       
         O.allW(t,:,:)=W;
-        O.allobj(t,:)=O.allobj_pca(t,:) - lambda*O.allobj_sparse(t,:);
+        O.allobj(t,:)=O.allobj_pca(t,:) - gamma*O.allobj_sparse(t,:);
         disp(['t=',num2str(t),'obj=',num2str(O.allobj(t,:)),', diff=', num2str(diff)]);
 	end
         runTime=toc(st);
