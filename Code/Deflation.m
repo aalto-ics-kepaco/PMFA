@@ -1,5 +1,5 @@
-function [Edef,Q] = Deflation(E,W)
-Edef=E;
+function [Covdef,Q] = Deflation(Cov,W)
+Covdef=Cov;
 Q=[];
 T=size(W,2);
 N=size(W,1);
@@ -17,9 +17,9 @@ for t=1:1:T
     end
     Q=[Q,q];
     % Hotelling Deflation 
-        %Sdef=Sdef-q*q'*Sdef*q*q';
+        %Covdef=Covdef-q*q'*Covdef*q*q';
     % Orthogonal Projection
-        Edef= Edef - Edef*q*q'*Edef/(q'*Edef*q);
+        Covdef= Covdef - Covdef*q*q'*Covdef/(q'*Covdef*q);
     % using tech report http://www.eecs.berkeley.edu/Pubs/TechRpts/2012/EECS-2012-99.pdf
     
 end

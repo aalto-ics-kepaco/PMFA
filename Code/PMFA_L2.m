@@ -1,4 +1,4 @@
-function [W,TotalrunTime]=PMFA_L2(Einput,S,lambda,L,U,num,str,ID)
+function [W,TotalrunTime]=PMFA_L2(Einput,S,lambda,L,U,num,ID)
 % solve max x^Tcov(E)x - \lambda \|Sx\|_2 such that, and L<=x <=U
 %%
 %Input:
@@ -7,7 +7,6 @@ function [W,TotalrunTime]=PMFA_L2(Einput,S,lambda,L,U,num,str,ID)
 %lambda= model parameter show how strong steadystate constraint will be
 % L=lowaer bound of all reaction
 % U=upper bound for all reaction
-% str= some string to save intermediate results
 % num = how many principal component need to find out. Default 1
 % ID = if consider to analysis a subsystem then ID contains lidt pf index
 % of target reactions.
@@ -27,9 +26,6 @@ if( nargin < 6 )
     num=1;
 end;
 if( nargin < 7 ) 
-    str='temp';
-end;
-if( nargin < 8 ) 
     ID=[1:1:length(L)];
 end;
 
@@ -63,15 +59,10 @@ Tcov = CovE-covS;
 winit=winit_Temp(:,1:10);
 disp('eig complete');
 
-system('mkdir ./temp')
 
-if exist(['./temp/',str,'.mat'])==2
-load(['./temp/',str,'.mat']);
-st=size(W,2)+1
-else
 W=[];
 st=1;
-end
+
 
 disp('Starting component = ')
 disp(st);
@@ -171,6 +162,5 @@ for t=st:1:num
      obj_pca(t)=allobj_pca(t,id(1));
      allCov(:,:,t)=currCov;
      TotalrunTime=sum(sum(runTime));
-     save(['./temp/',str,'.mat'],'allCov','W','O','allobj','allW','e','obj_pca','ID','allobj_pca','runTime','CovE');
 end
 end

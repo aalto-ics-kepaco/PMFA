@@ -2,7 +2,7 @@ function v=varianceCap(E,W)
 Ec=CentralizedExpression(E,2);
 W=Normalized(W);
 for i=1:1:size(W,2)
-pc=Ec*W(:,1:i);
+pc=Ec'*W(:,1:i);
 pc=CentralizedExpression(pc,1);
 [~,R]=qr(pc);
 if i==1
