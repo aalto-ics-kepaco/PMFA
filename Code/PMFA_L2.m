@@ -21,7 +21,7 @@ end;
 if( nargin < 5 ) 
     U=ones(length(L),1);
 end; 
-
+%L=L*999999
 if( nargin < 6 ) 
     num=1;
 end;
@@ -38,7 +38,7 @@ Nmet= size(S,1); % number of metabolites
 Nr=length(ID);
 
 %Number of trial to avoid local minima
-Rep=100;
+Rep=1000;
 
 % large matrix 
 E=zeros(D,N);
@@ -95,7 +95,8 @@ for t=st:1:num
         	w= winit(:,r-1);
     	else
 		w=zeros(D,1)
-        	w(ID)=2*(rand(Nr,1)-0.5); %(some values only rdxrxn)
+        	w(ID)=100*(rand(Nr,1)-0.5); %(some values only rdxrxn)
+            w=Normalized(w)
     	end
 	
     
