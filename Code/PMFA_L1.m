@@ -38,7 +38,7 @@ Nmet= size(S,1); % number of metabolites
 Nr=length(ID);
 
 %Number of trial to avoid local minima
-Rep=100;
+Rep=200;
 
 % large matrix 
 E=zeros(D,N);
