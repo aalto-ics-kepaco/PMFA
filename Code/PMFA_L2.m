@@ -1,4 +1,4 @@
-function [W,TotalrunTime]=PMFA_L2(Einput,S,lambda,L,U,num,ID)
+function [W,TotalrunTime] = PMFA_L2(Einput,S,lambda,L,U,num,ID)
 % solve max x^Tcov(E)x - \lambda \|Sx\|_2 such that, and L<=x <=U
 %%
 %Input:
@@ -15,153 +15,147 @@ function [W,TotalrunTime]=PMFA_L2(Einput,S,lambda,L,U,num,ID)
 %W the PMF loadings
 % runtime: total time taken
 
-if( nargin < 4 ) 
-    disp('Please gives all required inputs'); 
-end; 
-if( nargin < 5 ) 
-    U=ones(length(L),1);
-end; 
+if( nargin < 4 )
+    disp('Please gives all required inputs');
+end
+if( nargin < 5 )
+    U = ones(length(L),1);
+end
 %L=L*999999
-if( nargin < 6 ) 
-    num=1;
-end;
-if( nargin < 7 ) 
-    ID=[1:1:length(L)];
-end;
+if( nargin < 6 )
+    num = 1;
+end
+if( nargin < 7 )
+    ID = [1:1:length(L)];
+end
 
 % initialization
 
-eps=1.0000e-10;
-D=length(L); % number of reaction
-N=size(Einput,2); % number of samples
-Nmet= size(S,1); % number of metabolites
-Nr=length(ID);
+eps = 1e-10;
+D = length(L); % number of reaction
+N = size(Einput,2); % number of samples
+Nmet = size(S,1); % number of metabolites
+Nr = length(ID);
 
 %Number of trial to avoid local minima
-Rep=100;
+Rep = 100;
 
-% large matrix 
-E=zeros(D,N);
-E(ID,:)=Einput;
+% large matrix
+E = zeros(D,N);
+E(ID,:) = Einput;
 % centralized
-Ec=CentralizedExpression(E,2);
+Ec = CentralizedExpression(E,2);
 % covariance
-CovE=Ec*Ec'/N;
+CovE = Ec*Ec'/N;
 
 % initialization of W
 %[winit,~]=eigs(CovE,10,'LM');
 %disp('eig complete');
 
-covS=lambda*S'*S;
-covS=0.5*(covS+covS');
-Tcov = CovE-covS;
-[winit_Temp,~]=eig(Tcov);
-winit=winit_Temp(:,1:10);
+covS = lambda * (S' * S);
+covS = 0.5 * (covS + covS');
+Tcov = CovE - covS;
+[winit_Temp,~] = eig(Tcov);
+winit = winit_Temp(:,1:10);
 disp('eig complete');
-
 
 W=[];
 st=1;
 
-
 disp('Starting component = ')
 disp(st);
-for t=st:1:num
-    
-    currCov=zeros(D);
+for t = st:1:num
+    currCov = zeros(D);
     if numel(W)>0
-    currCov(ID,ID)= Deflation(CovE(ID,ID),W(ID,:));
+        currCov(ID,ID) = Deflation(CovE(ID,ID),W(ID,:));
     else
-    currCov=CovE;
+        currCov = CovE;
     end
-
+    
     Tcov = covS - currCov;
-    [evec,v]=eig(Tcov);
-    dv=diag(v);
+    [evec,v] = eig(Tcov);
+    dv = diag(v);
     idp = find(dv >  0.00001);
     idn = find(dv < -0.00001);
-    CovP=evec(:,idp)*v(idp,idp)*evec(:,idp)';
-    CovN=-evec(:,idn)*v(idn,idn)*evec(:,idn)';
+    CovP = evec(:,idp) * v(idp,idp) * evec(:,idp)';
+    CovN = -evec(:,idn) * v(idn,idn) * evec(:,idn)';
     clear evec
     clear v
     %[w1,o]=eigs(-Tcov,1,'LA');
     for r=1:1:Rep
-	
-    	st=tic;
-            if r==1
-            [w,o]=eigs(-0.5*(Tcov'+Tcov),1,'LA');
-
-	    elseif r<=10 
-        	w= winit(:,r-1);
-    	else
-		w=zeros(D,1)
-        	w(ID)=100*(rand(Nr,1)-0.5); %(some values only rdxrxn)
-            w=Normalized(w)
-    	end
-	
-    
         
-         %obj_pca = w'*currCov*w;
-         idL=find(w<L);
-         w(idL)=L(idL);
-         w=w/norm(w);
-         obj = w'*(covS-currCov)*w;
-         diff=1.0000e+12;
-         fval_old = -diff;
-         count=1;
-         temp(count).w=w;
-	 temp(count).objfunction=obj;
-         count=2; 
-         temp=[];
-         while diff>eps
-              w_old=w;
-              obj_old = obj; 
-		[tw,temp(count).obj,temp(count).flag]=quadprog(2*real(CovP),-2*real(CovN)*w_old,[],[],[],[],L,U);
-		idL=find(tw<L);
-	         tw(idL)=L(idL);
-
-		if norm(tw)>0.0001
-			temp(count).w=tw/norm(tw);
-		else
-			temp(count).w=tw;
-		end
-
-                temp(count).objConstant= temp(count).obj+w_old'*CovN*w_old; 
-                if temp(count).flag==1
-         		w = temp(count).w;
-         		obj=w'*(covS-currCov)*w;
-			temp(count).objfunction=obj;
-      		else
-		        temp(count).objfunction=w'*(covS-currCov)*w;
-         		w=w_old;
-         		obj=obj_old;
-                end
-                if obj_old<obj
-                        w=w_old;
-                        obj=obj_old;
-
-                end 
-                   temp(count).diff=2*(obj_old - obj)/(abs(obj_old)+abs(obj));
-     		if count>0
-        		diff=2*(obj_old - obj)/(abs(obj_old)+abs(obj));
-     		end
+        st=tic;
+        if r==1
+            [w,~] = eigs(-0.5*(Tcov'+Tcov),1,'LA');
+            
+        elseif r<=10
+            w = winit(:,r-1);
+        else
+            w = zeros(D,1);
+            w(ID) = 100*(rand(Nr,1)-0.5); %(some values only rdxrxn)
+            w = Normalized(w);
+        end
+        
+        %obj_pca = w'*currCov*w;
+        idL = find(w<L);
+        w(idL) = L(idL);
+        w = w/norm(w);
+        obj = w'*(covS-currCov)*w;
+        diff = 1.0000e+12;
+        fval_old = -diff;
+        count = 1;
+        temp(count).w = w;
+        temp(count).objfunction = obj;
+        count = 2;
+        temp = [];
+        while diff>eps
+            w_old=w;
+            obj_old = obj;
+            [tw,temp(count).obj,temp(count).flag]=quadprog(2*real(CovP),-2*real(CovN)*w_old,[],[],[],[],L,U);
+            idL=find(tw<L);
+            tw(idL)=L(idL);
+            
+            if norm(tw)>0.0001
+                temp(count).w=tw/norm(tw);
+            else
+                temp(count).w=tw;
+            end
+            
+            temp(count).objConstant= temp(count).obj+w_old'*CovN*w_old;
+            if temp(count).flag==1
+                w = temp(count).w;
+                obj=w'*(covS-currCov)*w;
+                temp(count).objfunction=obj;
+            else
+                temp(count).objfunction=w'*(covS-currCov)*w;
+                w=w_old;
+                obj=obj_old;
+            end
+            if obj_old<obj
+                w=w_old;
+                obj=obj_old;
                 
-                   
-     		count=count+1
-                disp(['t=',num2str(t),', r=',num2str(r),', obj=',num2str(obj),', diff=', num2str(diff)]),
-         end
-        T(t,r).temp=temp;
-      	allobj_pca(t,r) = w'*currCov*w;
-      	e(t,r,:)=S*w;
-        allW(t,r,:)=w;
-        allobj(t,r)=obj
-        runTime(t,r)=toc(st)
-     end
-     [a,id]=min(allobj(t,:));
-     W(:,t)=squeeze(allW(t,id(1),:));
-     O(t)=allobj(t,id);
-     obj_pca(t)=allobj_pca(t,id(1));
-     allCov(:,:,t)=currCov;
-     TotalrunTime=sum(sum(runTime));
+            end
+            temp(count).diff=2*(obj_old - obj)/(abs(obj_old)+abs(obj));
+            if count>0
+                diff=2*(obj_old - obj)/(abs(obj_old)+abs(obj));
+            end
+            
+            count = count+1;
+            disp(['t=',num2str(t),', r=',num2str(r),', obj=',num2str(obj),', diff=', num2str(diff)]),
+        end
+        T(t,r).temp = temp;
+        allobj_pca(t,r) = w'*currCov*w;
+        e(t,r,:) = S*w;
+        allW(t,r,:) = w;
+        allobj(t,r) = obj;
+        runTime(t,r) = toc(st);
+    end
+    [a,id] = min(allobj(t,:));
+    W(:,t) = squeeze(allW(t,id(1),:));
+    O(t) = allobj(t,id);
+    obj_pca(t) = allobj_pca(t,id(1));
+    allCov(:,:,t) = currCov;
+    TotalrunTime = sum(sum(runTime));
 end
 end

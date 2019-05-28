@@ -17,14 +17,14 @@ function [W,TotalrunTime]=PMFA_L1(Einput,S,lambda,L,U,num,ID)
 
 if( nargin < 4 ) 
     disp('Please gives all required inputs'); 
-end; 
+end
 if( nargin < 5 ) 
     U=ones(length(L),1);
-end; 
+end
 
 if( nargin < 6 ) 
     num=1;
-end; 
+end
 if( nargin < 7 ) 
     ID=[1:1:length(L)];
 end;
@@ -52,8 +52,8 @@ CovE=Ec*Ec'/N;
 %[winit,~]=eigs(CovE,10,'LM');
 %disp('eig complete');
 
-covS=lambda*S'*S;
-covS=0.5*(covS+covS');
+covS = lambda * (S'*S);
+covS = 0.5*(covS+covS');
 Tcov = CovE;
 [winit_Temp,~]=eig(Tcov);
 winit=winit_Temp(:,1:10);
@@ -107,7 +107,7 @@ for t=st:1:num
          fval_old = -diff;
          count=1;
          temp(count).w=w;
-	 temp(count).objfunction=obj;
+         temp(count).objfunction=obj;
          count=2; 
          temp=[];
          while diff>eps
