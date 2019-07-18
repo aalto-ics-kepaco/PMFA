@@ -55,7 +55,7 @@ CovE=Ec*Ec'/N;
 covS = lambda * (S'*S);
 covS = 0.5*(covS+covS');
 Tcov = CovE;
-[winit_Temp,~]=eig(Tcov);
+[winit_Temp,~]=eig(-Tcov);
 winit=winit_Temp(:,1:10);
 disp('eig complete');
 
@@ -119,7 +119,7 @@ for t=st:1:num
               tempw=twt(1:Nr);
 		idL=find(tempw<L);
                 tempw(idL)=L(idL);
-                if norm(twt(1:Nr))>0.0001
+                if norm(twt(1:Nr))>1e-20
 			temp(count).w=tempw/norm(tempw);
                 else
                         temp(count).w=tempw;
