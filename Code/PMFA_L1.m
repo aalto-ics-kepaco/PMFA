@@ -91,7 +91,7 @@ for t=st:1:num
             if r==1
             [w,o]=eigs(-0.5*(Tcov'+Tcov),1,'LA');
 
-	    elseif r<=10 
+	    elseif r<=11 
         	w= winit(:,r-1);
     	else
 		w=zeros(D,1)
