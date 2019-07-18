@@ -17,14 +17,14 @@ function [W,TotalrunTime]=PMFA_L1(Einput,S,lambda,L,U,num,ID)
 
 if( nargin < 4 ) 
     disp('Please gives all required inputs'); 
-end; 
+end
 if( nargin < 5 ) 
     U=ones(length(L),1);
-end; 
+end
 
 if( nargin < 6 ) 
     num=1;
-end; 
+end
 if( nargin < 7 ) 
     ID=[1:1:length(L)];
 end;
@@ -52,10 +52,10 @@ CovE=Ec*Ec'/N;
 %[winit,~]=eigs(CovE,10,'LM');
 %disp('eig complete');
 
-covS=lambda*S'*S;
-covS=0.5*(covS+covS');
+covS = lambda * (S'*S);
+covS = 0.5*(covS+covS');
 Tcov = CovE;
-[winit_Temp,~]=eig(Tcov);
+[winit_Temp,~]=eig(-Tcov);
 winit=winit_Temp(:,1:10);
 disp('eig complete');
 
@@ -91,7 +91,7 @@ for t=st:1:num
             if r==1
             [w,o]=eigs(-0.5*(Tcov'+Tcov),1,'LA');
 
-	    elseif r<=10 
+	    elseif r<=11 
         	w= winit(:,r-1);
     	else
 		w=zeros(D,1)
@@ -107,7 +107,7 @@ for t=st:1:num
          fval_old = -diff;
          count=1;
          temp(count).w=w;
-	 temp(count).objfunction=obj;
+         temp(count).objfunction=obj;
          count=2; 
          temp=[];
          while diff>eps
@@ -119,7 +119,7 @@ for t=st:1:num
               tempw=twt(1:Nr);
 		idL=find(tempw<L);
                 tempw(idL)=L(idL);
-                if norm(twt(1:Nr))>0.0001
+                if norm(twt(1:Nr))>1e-20
 			temp(count).w=tempw/norm(tempw);
                 else
                         temp(count).w=tempw;
